@@ -1,0 +1,36 @@
+name: "Roam Research backup"
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "*/10 * * * *" #doesn't actually :( Am I getting throttled? test
+
+jobs:
+  backup:
+    runs-on: macos-latest # trying to workaound random crashes on linux
+    name: Backup
+    timeout-minutes: 15
+    steps:
+      - name: Checkout notes repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ secrets.targetRepo }}
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      
+      - name: Setup dependencies
+        run: |
+          brew install borkdude/brew/jet # to do edn formatting. Note: MacOs specific
+          pip install git+https://github.com/Stvad/roam-to-git.git@edn
+      - name: Run backup
+        run: |
+          roam-to-git . --formats json edn
+        env:
+          ROAMRESEARCH_USER: ${{ secrets.roamEmail }}
+          ROAMRESEARCH_PASSWORD: ${{ secrets.roamPassword }}
+          ROAMRESEARCH_DATABASE: ${{ secrets.roamDatabase }}
+          
